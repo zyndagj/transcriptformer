@@ -409,6 +409,9 @@ class Transcriptformer(pl.LightningModule):
         )
 
         transformer_output = self.forward(batch=resized_batch, embed=True)
+        results = {}
+        results["num_input_tokens"] = resized_batch.gene_token_indices.numel()
+        results["num_output_tokens"] = transformer_output['embeddings'].numel()
 
         if pad_rows > 0:
             # Remove the last pad_rows rows from the batch
@@ -434,7 +437,6 @@ class Transcriptformer(pl.LightningModule):
             )
             transformer_output["gene_llh"] = gene_llh
 
-        results = {}
         results["obs"] = batch.obs
         results.update({key: transformer_output[key] for key in self.inference_config.output_keys})
         return results

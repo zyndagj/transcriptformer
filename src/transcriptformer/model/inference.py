@@ -1,5 +1,6 @@
 import logging
 import warnings
+from time import time
 
 import anndata
 import numpy as np
@@ -247,11 +248,21 @@ def run_inference(cfg, data_files: list[str] | list[anndata.AnnData]):
     )
 
     # Run prediction
+    logging.info("Starting warm up run")
     output = trainer.predict(model, dataloaders=dataloader)
+    logging.info("Starting timed run")
+    start_time = time()
+    output = trainer.predict(model, dataloaders=dataloader)
+    predict_time = time()-start_time
 
     # Combine predictions
     logging.info("Combining predictions")
     concat_output = stack_dict(output)
+    #logging.info(f"Input tokens per batch: {concat_output['num_input_tokens']}")
+    logging.info(f"Total number of input tokens: {sum(concat_output['num_input_tokens'])}")
+    logging.info(f"Total number of output tokens: {sum(concat_output['num_output_tokens'])}")
+    logging.info(f"Predict time: {predict_time:.2f} sec")
+    logging.info(f"Input tokens/sec: {sum(concat_output['num_input_tokens'])/predict_time:.1f}")
 
     # Create pandas DataFrames from the obs and uns data in concat_output
     obs_df = pd.DataFrame(concat_output["obs"])
